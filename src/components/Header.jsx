@@ -1,32 +1,35 @@
 import React, { useState } from 'react';
-import { Menu } from 'semantic-ui-react';
 import { withRouter, Link } from 'react-router-dom';
-import { MenuItems, Styles } from '../config';
+import { AppBar, Tabs, Tab } from '@material-ui/core';
+import { MenuItems } from '../config';
 
 const Header = ({ location }) => {
   const [activeItem, setActiveItem] = useState(MenuItems.find(item => item.route === location.pathname)?.name);
 
-  const handleItemClick = (e, {name}) => setActiveItem(name);
+  const handleChange = (event, newActiveItem) => { setActiveItem(newActiveItem); };
 
   return (
-    <div style={Styles.MENU}>
-      <img style={Styles.LOGO} src='/logo.svg' />
-
-      <Menu pointing secondary>
+    <AppBar position="static">
+      <div className="logo">
+        <img src='/logo.svg' alt="logo" />
+      </div>
+      <Tabs
+        value={activeItem}
+        onChange={handleChange}
+        aria-label="nav tabs"
+        className="tabs"
+      >
         {MenuItems.map(item => (
-          <Menu.Item
+          <Tab
             key={item.name}
-            as={Link}
+            component={Link}
             to={item.route}
-            name={item.name}
-            active={activeItem === item.name}
-            onClick={handleItemClick}
-          >
-            {item.label}
-          </Menu.Item>
+            label={item.label}
+            value={item.name}
+          />
         ))}
-      </Menu>
-    </div>
+      </Tabs>
+    </AppBar>
   );
 };
 

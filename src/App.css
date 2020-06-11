@@ -1,0 +1,120 @@
+/***** Helper class *****/
+.display__inline-flex {
+  display: inline-flex;
+}
+
+.mt24 {
+  margin-top: 24px !important;
+}
+
+.ml84 {
+  margin-left: 84px !important;
+}
+
+.divider__light {
+  background-color: #2b2bff !important;
+}
+
+.inline-flex {
+  display: inline-flex;
+}
+
+.align-items__center {
+  align-items: center;
+}
+
+.justify-content__center {
+  justify-content: center;
+}
+
+/***** Custom classes *****/
+.logo {
+  padding: 1rem;
+  width: 100%;
+  display: flex;
+  justify-content: center;
+}
+
+.logo img {
+  width: 200px;
+}
+
+.tabs > div > span {
+  background-color: aqua !important;
+}
+
+.tabs a:hover {
+  color: aqua !important;
+}
+
+.create-bet {
+  margin: 32px auto;
+  width: 50%;
+  display: flex;
+  flex-direction: column;
+}
+
+.create-bet__alert {
+  margin: 0 auto;
+  width: 50%;
+}
+
+.bet-summary {
+  margin: 0 !important;
+  background-color: #00003f !important;
+  color: #dcdcff !important;
+}
+
+.bet-summary .start-time {
+  width: 10%;
+}
+
+.bet-summary .results {
+  width: 5%;
+}
+
+.bet-summary .teams {
+  width: 45%;
+}
+
+.bet-summary .stake {
+  width: 5%;
+}
+
+.bet-summary .actions {
+  width: 30%;
+}
+
+.bet-summary .actions button {
+  background-color: white;
+  margin-right: 2rem;
+}
+
+.bet-summary .actions button:last-child {
+  margin-right: 0;
+}
+
+.bet-details {
+  background-color: #f0f0ff;
+}
+
+.bet-details .organiser {
+  width: 100%;
+  display: flex;
+  align-items: center;
+}
+
+.bet-details .organiser .vote-button {
+  background-color: white;
+  margin-left: 1.5rem;
+}
+
+.bet-details .results-form {
+  display: flex;
+  align-items: flex-start;
+}
+
+.bet-details .results-form .save-results-button {
+  background-color: white;
+  margin-left: 1.5rem;
+}

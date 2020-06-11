@@ -1,14 +1,14 @@
-import Routes from './route-paths';
+import { RoutePaths } from '../constants';
 
 export default [
   {
     name: 'bets',
-    route: Routes.BETS,
+    route: RoutePaths.BETS,
     label: 'Bets',
   },
   {
     name: 'create-bet',
-    route: Routes.CREATE_BET,
+    route: RoutePaths.CREATE_BET,
     label: 'Create Bet',
   }
 ];

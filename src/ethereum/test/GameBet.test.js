@@ -94,7 +94,99 @@ describe('FootballGameBet testing', () => {
         assert.equal(bet, 2);
     });
 
-    
+    it('finish game properly', async() => {
+        const footballGameBet = new web3.eth.Contract(FootballGameBet.abi, betsAddresses[0]);
+
+        await footballGameBet.methods.betOnHomeTeam().send({from: accounts[2], gas: 3000000, value: web3.utils.toWei("1", 'ether')});
+        await footballGameBet.methods.gameFinished(3,2).send({from: accounts[0], gas: 3000000});
+
+        const homeTeamGoals = await footballGameBet.methods.homeTeamGoals().call({from: accounts[0]});
+        const awayTeamGoals = await footballGameBet.methods.awayTeamGoals().call({from: accounts[0]});
+
+        assert.equal(homeTeamGoals, 3);
+        assert.equal(awayTeamGoals, 2);
+    });
+
+    it('finish game and properly pay winners that bet on home team to win', async() => {
+        const footballGameBet = new web3.eth.Contract(FootballGameBet.abi, betsAddresses[0]);
+
+        const acc0Balance = await web3.eth.getBalance(accounts[0]);
+        
+        await footballGameBet.methods.betOnHomeTeam().send({from: accounts[2], gas: 3000000, value: web3.utils.toWei("1", 'ether')});
+        const acc2Balance = await web3.eth.getBalance(accounts[2]);
+        
+        await footballGameBet.methods.betOnHomeTeam().send({from: accounts[1], gas: 3000000, value: web3.utils.toWei("1", 'ether')});
+        const acc1Balance = await web3.eth.getBalance(accounts[1]);
+        
+        await footballGameBet.methods.betOnAwayTeam().send({from: accounts[3], gas: 3000000, value: web3.utils.toWei("1", 'ether')});
+        const acc3Balance = await web3.eth.getBalance(accounts[3]);
+        
+        await footballGameBet.methods.gameFinished(3,2).send({from: accounts[0], gas: 3000000});
+
+        const acc0BalanceAfterFinish = await web3.eth.getBalance(accounts[0]);
+        const acc2BalanceAfterWin = await web3.eth.getBalance(accounts[2]);
+        const acc1BalanceAfterWin = await web3.eth.getBalance(accounts[1]);
+        const acc3BalanceAfterLoss = await web3.eth.getBalance(accounts[3]);
+        
+        assert.ok(BigInt(acc0Balance) < BigInt(acc0BalanceAfterFinish)); // Account 0 has 21 digit amount of ether so BigInt is needed
+        assert.ok(acc2Balance < acc2BalanceAfterWin);
+        assert.ok(acc1Balance < BigInt(acc1BalanceAfterWin));
+        assert.equal(acc3Balance, acc3BalanceAfterLoss);
+    });
+
+    it('finish game and properly return stake if game is draw', async() => {
+        const footballGameBet = new web3.eth.Contract(FootballGameBet.abi, betsAddresses[0]);
+
+        const acc0Balance = await web3.eth.getBalance(accounts[0]);
+        
+        await footballGameBet.methods.betOnHomeTeam().send({from: accounts[2], gas: 3000000, value: web3.utils.toWei("1", 'ether')});
+        const acc2Balance = await web3.eth.getBalance(accounts[2]);
+        
+        await footballGameBet.methods.betOnHomeTeam().send({from: accounts[1], gas: 3000000, value: web3.utils.toWei("1", 'ether')});
+        const acc1Balance = await web3.eth.getBalance(accounts[1]);
+        
+        await footballGameBet.methods.betOnAwayTeam().send({from: accounts[3], gas: 3000000, value: web3.utils.toWei("1", 'ether')});
+        const acc3Balance = await web3.eth.getBalance(accounts[3]);
+        
+        await footballGameBet.methods.gameFinished(0,0).send({from: accounts[0], gas: 3000000});
+
+        const acc0BalanceAfterFinish = await web3.eth.getBalance(accounts[0]);
+        const acc2BalanceAfterFinish = await web3.eth.getBalance(accounts[2]);
+        const acc1BalanceAfterFinish = await web3.eth.getBalance(accounts[1]);
+        const acc3BalanceAfterFinish = await web3.eth.getBalance(accounts[3]);
+
+        assert.ok(acc0Balance > acc0BalanceAfterFinish);
+        assert.ok(acc2Balance < acc2BalanceAfterFinish);
+        assert.ok(acc1Balance < BigInt(acc1BalanceAfterFinish));
+        assert.ok(acc3Balance < acc3BalanceAfterFinish);
+    });
+
+    it('finish game and properly pay winners that bet on away team to win', async() => {
+        const footballGameBet = new web3.eth.Contract(FootballGameBet.abi, betsAddresses[0]);
+
+        const acc0Balance = await web3.eth.getBalance(accounts[0]);
+        
+        await footballGameBet.methods.betOnHomeTeam().send({from: accounts[2], gas: 3000000, value: web3.utils.toWei("1", 'ether')});
+        const acc2Balance = await web3.eth.getBalance(accounts[2]);
+        
+        await footballGameBet.methods.betOnHomeTeam().send({from: accounts[1], gas: 3000000, value: web3.utils.toWei("1", 'ether')});
+        const acc1Balance = await web3.eth.getBalance(accounts[1]);
+        
+        await footballGameBet.methods.betOnAwayTeam().send({from: accounts[3], gas: 3000000, value: web3.utils.toWei("1", 'ether')});
+        const acc3Balance = await web3.eth.getBalance(accounts[3]);
+        
+        await footballGameBet.methods.gameFinished(2,3).send({from: accounts[0], gas: 3000000});
+
+        const acc0BalanceAfterFinish = await web3.eth.getBalance(accounts[0]);
+        const acc2BalanceAfterLoss = await web3.eth.getBalance(accounts[2]);
+        const acc1BalanceAfterLoss = await web3.eth.getBalance(accounts[1]);
+        const acc3BalanceAfterWin = await web3.eth.getBalance(accounts[3]);
+        
+        assert.ok(BigInt(acc0Balance) < BigInt(acc0BalanceAfterFinish));
+        assert.equal(acc2Balance, acc2BalanceAfterLoss);
+        assert.equal(acc1Balance, BigInt(acc1BalanceAfterLoss));
+        assert.ok(acc3Balance < BigInt(acc3BalanceAfterWin));
+    });
 });
 
 

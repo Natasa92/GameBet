@@ -2,9 +2,9 @@ pragma solidity  >=0.4.22 <0.7.0;
 
 contract FootballGameBet {
     string public homeTeam;
-    uint public homeTeamGoals;
+    uint8 public homeTeamGoals;
     string public awayTeam;
-    uint public awayTeamGoals;
+    uint8 public awayTeamGoals;
     uint public startTime;
     
     address payable public organiser;
@@ -46,11 +46,11 @@ contract FootballGameBet {
         return players;
     }
     
-    function gameFinished(uint homeGoals, uint awayGoals) public isContractBalanceValid isOrganiser {
+    function gameFinished(uint8 homeGoals, uint8 awayGoals) public isContractBalanceValid isOrganiser {
         homeTeamGoals = homeGoals;
         awayTeamGoals = awayGoals;
         
-        uint winner = 0;
+        uint8 winner = 0;
         uint winningAmount = players.length*stake;
         uint organiserFee = 0;
         

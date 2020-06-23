@@ -4,7 +4,7 @@ import { address } from './contractAddress';
 
 export default () => {
   return new web3.eth.Contract(
-    JSON.parse(GameBet.interface),
+    GameBet.abi,
     address
   );
 };

@@ -3,6 +3,10 @@
   display: inline-flex;
 }
 
+.flex-1 {
+  flex: 1;
+}
+
 .mt24 {
   margin-top: 24px !important;
 }
@@ -12,7 +16,7 @@
 }
 
 .divider__light {
-  background-color: #2b2bff !important;
+  background-color: aqua !important;
 }
 
 .inline-flex {
@@ -28,6 +32,10 @@
 }
 
 /***** Custom classes *****/
+.header {
+  background-color: #0D226B !important;
+}
+
 .logo {
   padding: 1rem;
   width: 100%;
@@ -41,6 +49,10 @@
 
 .tabs > div > span {
   background-color: aqua !important;
+}
+
+.tabs.tabs__verical > div > span {
+  background-color: transparent !important;
 }
 
 .tabs a:hover {
@@ -59,10 +71,38 @@
   width: 50%;
 }
 
+.create-bet__stake {
+  margin-right: 0 !important;
+}
+
+.create-bet__currency {
+  margin: 8px 8px 8px 0;
+}
+
+.bet-summary__wrapper {
+  display: flex;
+  justify-content: stretch;
+}
+
+.bet-summary__tabs span:first-child {
+  align-items: flex-start !important;
+}
+
+.bet-summary__tabs.Mui-selected {
+  color: #0D226B !important;
+  font-weight: 600;
+  background-color: #F2F7FF !important;
+}
+
 .bet-summary {
   margin: 0 !important;
-  background-color: #00003f !important;
-  color: #dcdcff !important;
+  background-color: #0B409C !important;
+  color: white !important;
+  opacity: 1 !important;
+}
+
+.bet-summary__header {
+  border-bottom: 1px solid white !important;
 }
 
 .bet-summary .start-time {
@@ -78,7 +118,7 @@
 }
 
 .bet-summary .stake {
-  width: 5%;
+  width: 10%;
 }
 
 .bet-summary .actions {

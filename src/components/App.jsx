@@ -1,5 +1,6 @@
 import React from 'react';
 import { BrowserRouter } from 'react-router-dom';
+import { SnackbarProvider } from 'notistack';
 import { CssBaseline, Container } from '@material-ui/core';
 import Routes from './Routes';
 import Header from './Header';
@@ -9,10 +10,12 @@ const App = () => (
   <>
     <CssBaseline />
     <Container>
-      <BrowserRouter>
-        <Header />
-        <Routes />
-      </BrowserRouter>
+      <SnackbarProvider maxSnack={5}>
+        <BrowserRouter>
+          <Header />
+          <Routes />
+        </BrowserRouter>
+      </SnackbarProvider>
     </Container>
   </>
 );

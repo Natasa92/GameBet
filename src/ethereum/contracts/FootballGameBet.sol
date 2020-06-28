@@ -15,7 +15,7 @@ contract FootballGameBet {
     address payable[] public players;
     
     constructor(string memory hometeam, string memory awayteam, uint starttime, uint stakeLimit, address payable organiserAddress) public {
-        require(starttime>now, "Invalid game start time.");
+        require(starttime > now, "Invalid game start time.");
         require(bytes(hometeam).length > 0, "Home team name can't be empty.");
         require(bytes(awayteam).length > 0, "Away team name can't be empty.");
         require(stakeLimit > 0, "Stake value can't be 0.");

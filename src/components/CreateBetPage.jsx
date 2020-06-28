@@ -2,14 +2,17 @@ import React, { useState } from 'react';
 import { withRouter } from 'react-router-dom';
 import moment from 'moment';
 import { useSnackbar } from 'notistack';
-import { TextField, Button, Box, Select, MenuItem, Backdrop, CircularProgress } from '@material-ui/core';
-import { Alert, AlertTitle } from '@material-ui/lab'
+import Spinner from 'react-spinkit';
+import {
+  TextField, Button, Box, Select, MenuItem, Backdrop,
+} from '@material-ui/core';
+import { Alert, AlertTitle } from '@material-ui/lab';
 import { DateTimePicker, MuiPickersUtilsProvider } from '@material-ui/pickers';
 import { makeStyles } from '@material-ui/core/styles';
 import MomentUtils from '@date-io/moment';
 import GameBetContract from '../ethereum/gameBet';
-import web3 from '../ethereum/web3';
-import { RoutePaths } from '../constants';
+import { RoutePaths, Bet as BetConstants } from '../constants';
+import { currencyConvert } from '../helpers';
 
 const useStyles = makeStyles((theme) => ({
   root: {
@@ -23,48 +26,35 @@ const useStyles = makeStyles((theme) => ({
   },
 }));
 
-const CreateBetPage = ({ history }) => {
+const CreateBetPage = ({ getAccount, history }) => {
   const classes = useStyles();
   const [data, setData] = useState({
     homeTeam: '',
     awayTeam: '',
     startTime: moment().valueOf(),
     stake: '0',
-    currency: 'wei'
+    currency: BetConstants.Currency.WEI,
   });
-  const [formError, setFormError] = useState();
+  const [error, setError] = useState();
   const [loading, setLoading] = useState(false);
   const { enqueueSnackbar } = useSnackbar();
 
   const handleChange = event => {
     const { id, value } = event.target;
 
-    if (formError) {
-      setFormError(null);
+    if (error) {
+      setError();
     }
 
     setData({ ...data, [id]: value });
   };
 
-  const currencyConvert = (newCurrency) => {
-    const { currency, stake } = data;
-
-    if (currency === newCurrency) {
-      return stake;
-    } else if (newCurrency === 'wei') {
-      return web3.utils.toWei(stake, currency);
-    } else if (stake < 1) {
-      return stake;
-    } else {
-      return web3.utils.fromWei(stake, newCurrency);
-    }
-  };
-
   const handleCurrencyChange = (event) => {
     const { value } = event.target;
+    const { currency, stake } = data;
     const newState = {};
 
-    newState.stake = currencyConvert(value);
+    newState.stake = currencyConvert(stake, currency, value);
     newState.currency = value;
 
     setData({ ...data, ...newState });
@@ -77,28 +67,29 @@ const CreateBetPage = ({ history }) => {
 
   const handleOnSubmit = async (event) => {
     event.preventDefault();
+    await setError(null);
     await setLoading(true);
     const { homeTeam, awayTeam, startTime, currency, stake } = data;
 
     let isFormValid = true;
-    if (currency === 'wei' && stake < 1) {
-      setFormError('Invalid value for stake.');
+    if (currency === BetConstants.Currency.WEI && stake < 1) {
+      setError('Invalid value for stake.');
       isFormValid = false;
+      
     }
     
-    if (isFormValid) {
+    const _account = await getAccount();
+
+    if (isFormValid && _account) {
       try {
-        const accounts = await web3.eth.getAccounts();
         const gameBetContract = GameBetContract();
-        const _stake = currencyConvert('wei');
-        await gameBetContract.methods.createFootballBet(homeTeam, awayTeam, moment(startTime).unix(), _stake).send({ from: accounts[0], gas: 3000000 });
+        const _stake = currencyConvert(stake, currency, BetConstants.Currency.WEI);
+        await gameBetContract.methods.createFootballBet(homeTeam, awayTeam, moment(startTime).unix(), _stake).send({ from: _account });
         await setLoading(false);
-        history.push(RoutePaths.BETS);
         enqueueSnackbar('The game bet has been successfully created.', { variant: 'success' });
-        return;
+        history.push(RoutePaths.BETS);
       } catch (e) {
         enqueueSnackbar('Error occured while creating the bet.', { variant: 'error' });
-        console.error(e);
       }
     }
 
@@ -107,65 +98,73 @@ const CreateBetPage = ({ history }) => {
 
   return (
     <>
-      <Backdrop className={classes.backdrop} open={loading}>
-        <CircularProgress color="inherit" />
+      <Backdrop className={`${classes.backdrop} overlay`} open={loading && !error}>
+        <Spinner name="ball-pulse-sync" />
       </Backdrop>
-      <Box mt={6}>
-        {formError && (
-          <Alert severity="error" className="create-bet__alert">
-            <AlertTitle>Error</AlertTitle>
-            {formError}
-          </Alert>
-        )}
-        <form className={`create-bet ${classes.root}`} onSubmit={handleOnSubmit}>
-          <TextField
-            required
-            id="homeTeam"
-            label="Home Team"
-            value={data.homeTeam}
-            onChange={handleChange}
-            placeholder="Home Team"
-            InputLabelProps={{ shrink: true }}
-          />
-          <TextField
-            required
-            id="awayTeam"
-            label="Away Team"
-            value={data.awayTeam}
-            onChange={handleChange}
-            placeholder="Away Team"
-            InputLabelProps={{ shrink: true }}
-          />
-          <MuiPickersUtilsProvider utils={MomentUtils}>
-            <DateTimePicker
-              id="startTime"
-              value={data.startTime}
-              onChange={handleDateTimeChange}
-              disablePast
-              showTodayButton
-              label="Game start's at"
-            />
-          </MuiPickersUtilsProvider>
-          <div className="display__inline-flex">
+      <Box className="create-bet" mt={6}>
+        <div className="create-bet__content">
+          {error && (
+            <Alert severity="error" className="alert">
+              <AlertTitle>Error</AlertTitle>
+              {error}
+            </Alert>
+          )}
+          <form className={`create-bet__form ${classes.root}`} onSubmit={handleOnSubmit}>
             <TextField
               required
-              id="stake"
-              label="Stake"
-              value={data.stake}
+              id="homeTeam"
+              label="Home Team"
+              value={data.homeTeam}
               onChange={handleChange}
-              placeholder="Stake"
+              placeholder="Home Team"
               InputLabelProps={{ shrink: true }}
-              className="create-bet__stake"
             />
-            <Select id="currency" value={data.currency} onChange={handleCurrencyChange} className="create-bet__currency">
-              <MenuItem value="wei">Wei</MenuItem>
-              <MenuItem value="ether">Ether</MenuItem>
-            </Select>
-          </div>
-          <Button variant="contained" color="primary" className="mt24" type="submit">
-            Create Bet
-          </Button>
-        </form>
+            <TextField
+              required
+              id="awayTeam"
+              label="Away Team"
+              value={data.awayTeam}
+              onChange={handleChange}
+              placeholder="Away Team"
+              InputLabelProps={{ shrink: true }}
+            />
+            <MuiPickersUtilsProvider utils={MomentUtils}>
+              <DateTimePicker
+                id="startTime"
+                value={data.startTime}
+                onChange={handleDateTimeChange}
+                disablePast
+                showTodayButton
+                label="Game start's at"
+              />
+            </MuiPickersUtilsProvider>
+            <div className="display__inline-flex">
+              <TextField
+                required
+                id="stake"
+                label="Stake"
+                value={data.stake}
+                onChange={handleChange}
+                placeholder="Stake"
+                InputLabelProps={{ shrink: true }}
+                className="create-bet__stake"
+              />
+              <Select
+                id="currency"
+                value={data.currency}
+                onChange={handleCurrencyChange}
+                className="create-bet__currency"
+              >
+                <MenuItem value="wei">Wei</MenuItem>
+                <MenuItem value="ether">Ether</MenuItem>
+              </Select>
+            </div>
+            <Button variant="contained" className="button create-bet__button mt24" type="submit">
+              Create Bet
+            </Button>
+          </form>
+        </div>
+        <img className="create-bet__img" src="/illustrations/add-bet.svg" alt="Create Bet" />
       </Box>
     </>
   );

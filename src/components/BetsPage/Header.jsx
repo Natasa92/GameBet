@@ -31,7 +31,7 @@ const Header = () => (
         variant="fullWidth"
         className="divider__light"
       />
-      <Box mx={2} className="stake inline-flex align-items__center">
+      <Box mx={2} className="stake inline-flex align-items__center justify-content__center">
         Stake
       </Box>
       <Divider

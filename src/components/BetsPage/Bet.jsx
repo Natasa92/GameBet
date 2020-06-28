@@ -1,9 +1,6 @@
 import React, { useState } from 'react';
 import moment from 'moment';
-import web3 from '../../ethereum/web3';
 import { useSnackbar } from 'notistack';
-import GameBetContract from '../../ethereum/gameBet';
-import FootballGameBetContract from '../../ethereum/footballGameBet';
 import {
   ExpansionPanel,
   ExpansionPanelSummary,
@@ -14,49 +11,50 @@ import {
   TextField,
 } from '@material-ui/core';
 import Rating from '@material-ui/lab/Rating';
+import GameBetContract from '../../ethereum/gameBet';
+import FootballGameBetContract from '../../ethereum/footballGameBet';
+import { Bet as BetConstants } from '../../constants';
+import { BetConfig } from '../../config';
+import {
+  validateGoalInput, validateRate, currencyConvert, capitalize,
+} from '../../helpers';
 
-const BetDetails = ({ data: bet, account, votes, setShowOverlayLoader }) => {
+const BetDetails = ({
+  data: bet, account, setShowOverlayLoader, reloadBets, clearTimer, getAccount,
+}) => {
   const [rate, setRate] = useState(0);
   const [goals, setGoals] = useState({ home: '', away: '' });
   const [goalsError, setGoalsError] = useState({ home: null, away: null });
   const [saveGoalsButtonDisabled, setSaveGoalsButtonDisabled] = useState(true);
   const [voteButtonDisabled, setVoteButtonDisabled] = useState(true);
   const { enqueueSnackbar } = useSnackbar();
-
-  const isGoalInputValid = (team, value) => {
-    let isValid = true;
-
-    if (isNaN(value)) {
-      isValid = false;
-      setGoalsError({ ...goalsError, [team]: "Incorrect entry." });
-    }
-
-    if (value == null || value === '') {
-      isValid = false;
-    }
-    
-    return isValid;
-  };
+  const gameBets = GameBetContract();
+  const footballGameBetInstance = FootballGameBetContract(bet.address);
 
   const canSaveResults = () => {
-    if (isGoalInputValid('home', goals.home) && isGoalInputValid('away', goals.away)) {
+    const {
+      isValid: isHomeGoalsValid,
+      message: homeGoalsErrorMessage,
+    } = validateGoalInput('home', goals.home);
+    const {
+      isValid: isAwayGoalsValid,
+      message: awayGoalsErrorMessage,
+    } = validateGoalInput('away', goals.away);
+
+    if (isHomeGoalsValid && isAwayGoalsValid) {
       setSaveGoalsButtonDisabled(false);
     } else {
+      setGoalsError({ home: homeGoalsErrorMessage, away: awayGoalsErrorMessage });
       setSaveGoalsButtonDisabled(true);
     }
   };
 
-  const canSubmitVote = (value) => {
-    if (value > 0 && value <= 5) {
-      setVoteButtonDisabled(false);
-    } else {
-      setVoteButtonDisabled(true  );
-    }
-  };
-
   const handleRateChange = (event, newValue) => {
-    canSubmitVote(newValue);
-    setRate(newValue);
+    const isRateValid = validateRate(newValue)
+    setVoteButtonDisabled(!isRateValid);
+    if (isRateValid) {
+      setRate(newValue);
+    }
   };
 
   const handleGoalChange = (event) => {
@@ -75,58 +73,88 @@ const BetDetails = ({ data: bet, account, votes, setShowOverlayLoader }) => {
 
   const handleVoteClick = async (event) => {
     event.stopPropagation();
+    clearTimer();
     await setShowOverlayLoader(true);
-    
-    try {
-      const gameBets = GameBetContract();
-      await gameBets.methods.vote(bet.organiser, bet.address, rate).send({ from: account, gas: 300000 });
-      enqueueSnackbar(`You have successfully submited rate for organiser ${bet.organiser}.`, { variant: 'success' });
-    } catch (error) {
-      enqueueSnackbar(`Error occured while submiting the rate for the organiser ${bet.organiser}.`, { variant: 'error' });
-      console.error(error);
+
+    const _account = await getAccount();
+
+    if (_account) {
+      try {
+        await gameBets.methods.vote(bet.organiser, bet.address, rate).send({ from: _account });
+        await reloadBets();
+        enqueueSnackbar(`You have successfully submited rate for organiser ${bet.organiser}.`, { variant: 'success' });
+      } catch (error) {
+        enqueueSnackbar(`Error occured while submiting the rate for the organiser ${bet.organiser}.`, { variant: 'error' });
+        console.error(error);
+      }
     }
 
     await setShowOverlayLoader(false);
   };
+
   const handleResultSubmit = async (event) => {
     event.stopPropagation();
+    clearTimer();
     await setShowOverlayLoader(true);
 
-    try {
-      const footballGameBetInstance = FootballGameBetContract(bet.address);
-      await footballGameBetInstance.methods.gameFinished(Number(goals.home), Number(goals.away)).send({ from: account, gas: 300000 });
-      enqueueSnackbar(`You have successfully submited results for the game ${bet.homeTeam} : ${bet.awayTeam}.`, { variant: 'success' });
-    } catch (e) {
-      enqueueSnackbar(`Error occured while submiting the result for the game ${bet.homeTeam} : ${bet.awayTeam}.`, { variant: 'error' });
-      console.error(e);
+    const _account = await getAccount();
+
+    if (_account) {
+      try {
+        await footballGameBetInstance.methods.gameFinished(Number(goals.home), Number(goals.away)).send({ from: _account });
+        await reloadBets();
+        enqueueSnackbar(`You have successfully submited results for the game ${bet.homeTeam} : ${bet.awayTeam}.`, { variant: 'success' });
+      } catch (e) {
+        enqueueSnackbar(`Error occured while submiting the result for the game ${bet.homeTeam} : ${bet.awayTeam}.`, { variant: 'error' });
+        console.error(e);
+      }
     }
 
     await setShowOverlayLoader(false);
+   
   };
 
   const handleBetClick = (team) => async (event) => {
     event.stopPropagation();
+    clearTimer();
     await setShowOverlayLoader(true);
-    const footballGameBetInstance = FootballGameBetContract(bet.address);
 
-    try {
-      if (team === 'home') {
-        await footballGameBetInstance.methods.betOnHomeTeam().send({ from: account, gas: 300000, value: bet.stake });
-      } else {
-        await footballGameBetInstance.methods.betOnAwayTeam().send({ from: account, gas: 300000, value: bet.stake });
+    const _account = await getAccount();
+
+    if (_account) {
+      try {
+        if (team === 'home') {
+          await footballGameBetInstance.methods.betOnHomeTeam().send({ from: _account, value: bet.stake });
+        } else {
+          await footballGameBetInstance.methods.betOnAwayTeam().send({ from: _account, value: bet.stake });
+        }
+
+        await reloadBets();
+        enqueueSnackbar(`You have successfully submited your bet on the ${team} team for the game ${bet.homeTeam} : ${bet.awayTeam}.`, { variant: 'success' });
+      } catch (error) {
+        enqueueSnackbar(`Error occured while submiting the bet for the game ${bet.homeTeam} : ${bet.awayTeam}.`, { variant: 'error' });
+        console.error(error);
       }
-      enqueueSnackbar(`You have successfully submited your bet on the ${team} team for the game ${bet.homeTeam} : ${bet.awayTeam}.`, { variant: 'success' });
-    } catch (error) {
-      enqueueSnackbar(`Error occured while submiting the bet for the game ${bet.homeTeam} : ${bet.awayTeam}.`, { variant: 'error' });
-      console.error(error);
     }
 
     await setShowOverlayLoader(false);
   };
 
-  const isGameFinished = Number(bet.startTime) < moment().unix();
-  const showResultForm = account === bet.organiser && isGameFinished && bet.balance > 0;
-  const showVote = !bet.hasVoted && isGameFinished && bet.organiser !== account;
+  const formatData = () => {
+    const _data = {};
+    _data.time = moment.unix(bet.startTime).format('DD/MM/YYYY HH:mm');
+    _data.result = `${isGameEnded ? bet.homeTeamGoals : '-'} : ${isGameEnded ? bet.awayTeamGoals : '-'}`;
+    _data.teams = `${bet.homeTeam} : ${bet.awayTeam}`;
+    const _stake = currencyConvert(bet.stake, BetConstants.Currency.WEI, BetConstants.Currency.ETHER)
+    _data.stake = `${_stake} ${capitalize(BetConstants.Currency.ETHER)}`;
+    return _data;
+  }
+
+  const isGameEnded = Number(bet.startTime) + BetConfig.GAME_DURATION < moment().unix();
+  const showResultForm = account === bet.organiser && isGameEnded && bet.balance > 0;
+  const showVote = !bet.hasVoted && isGameEnded && bet.organiser !== account && (bet.betOn === '1' || bet.betOn === '2');
+  const canBet = Number(bet.startTime) > moment().unix();
+  const data = formatData();
 
   return (
     <ExpansionPanel key={bet.address}>
@@ -136,7 +164,7 @@ const BetDetails = ({ data: bet, account, votes, setShowOverlayLoader }) => {
         className="bet-summary"
       >
         <Box mr={2} className="start-time inline-flex align-items__center">
-          {moment.unix(bet.startTime).format('DD/MM/YYYY HH:mm')}
+          {data.time}
         </Box>
         <Divider
           orientation="vertical"
@@ -145,7 +173,7 @@ const BetDetails = ({ data: bet, account, votes, setShowOverlayLoader }) => {
           className="divider__light"
         />
         <Box mx={2} className="results inline-flex align-items__center justify-content__center">
-          {`${bet.homeTeamGoals} : ${bet.awayTeamGoals}`}
+          {data.result}
         </Box>
         <Divider
           orientation="vertical"
@@ -154,7 +182,7 @@ const BetDetails = ({ data: bet, account, votes, setShowOverlayLoader }) => {
           className="divider__light"
         />
         <Box mx={2} className="teams inline-flex align-items__center">
-          {`${bet.homeTeam} : ${bet.awayTeam}`}
+          {data.teams}
         </Box>
         <Divider
           orientation="vertical"
@@ -162,8 +190,8 @@ const BetDetails = ({ data: bet, account, votes, setShowOverlayLoader }) => {
           variant="fullWidth"
           className="divider__light"
         />
-        <Box mx={2} className="stake inline-flex align-items__center">
-          {bet.stake}
+        <Box mx={2} className="stake inline-flex align-items__center justify-content__flex-end">
+          {data.stake}
         </Box>
         <Divider
           orientation="vertical"
@@ -172,8 +200,20 @@ const BetDetails = ({ data: bet, account, votes, setShowOverlayLoader }) => {
           className="divider__light"
         />
         <Box mx={2} className="actions inline-flex align-items__center">
-          <Button onClick={handleBetClick('home')} disabled={isGameFinished}>Home Team Wins</Button>
-          <Button onClick={handleBetClick('away')} disabled={isGameFinished}>Away Team Wins</Button>
+          <Button
+            onClick={handleBetClick('home')}
+            disabled={!canBet || bet.betOn === '1' || bet.betOn === '2'}
+            className={`${bet.betOn === '1' ? 'bet-on' : ''} ${bet.betOn === '2' ? 'visibility__hidden' : ''}`}
+          >
+            {bet.betOn === '1' ? 'You bet on Home Team' : `Home Team Wins`}
+          </Button>
+          <Button
+            onClick={handleBetClick('away')}
+            disabled={!canBet || bet.betOn === '1' || bet.betOn === '2'}
+            className={`${bet.betOn === '2' ? 'bet-on' : ''} ${bet.betOn === '1' ? 'visibility__hidden' : ''}`}
+          >
+            {bet.betOn === '2' ? `You bet on Away Team` : `Away Team Wins`}
+          </Button>
         </Box>
       </ExpansionPanelSummary>
       <ExpansionPanelDetails className="bet-details">
@@ -206,6 +246,15 @@ const BetDetails = ({ data: bet, account, votes, setShowOverlayLoader }) => {
               </>
             )}
           </Box>
+          <TextField
+            className="mt24"
+            id={`total-bets-${bet.address}`}
+            label="Total bets"
+            defaultValue={bet.totalBets?.length}
+            InputProps={{
+              readOnly: true,
+            }}
+          />
           {showResultForm && (
             <Box mt={4}>
               <form className="results-form">

@@ -21,6 +21,7 @@
     "react-dom": "^16.13.1",
     "react-router-dom": "^5.2.0",
     "react-scripts": "3.4.1",
+    "react-spinkit": "^3.0.0",
     "solc": "^0.6.9",
     "web3": "^1.2.9"
   },

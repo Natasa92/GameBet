@@ -10,5 +10,10 @@ export default [
     name: 'create-bet',
     route: RoutePaths.CREATE_BET,
     label: 'Create Bet',
+  },
+  {
+    name: 'organisers',
+    route: RoutePaths.ORGANISERS,
+    label: 'Organisers',
   }
 ];

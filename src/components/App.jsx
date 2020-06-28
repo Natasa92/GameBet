@@ -2,8 +2,7 @@ import React from 'react';
 import { BrowserRouter } from 'react-router-dom';
 import { SnackbarProvider } from 'notistack';
 import { CssBaseline, Container } from '@material-ui/core';
-import Routes from './Routes';
-import Header from './Header';
+import BaseApp from './BaseApp';
 import '../App.css'
 
 const App = () => (
@@ -12,8 +11,7 @@ const App = () => (
     <Container>
       <SnackbarProvider maxSnack={5}>
         <BrowserRouter>
-          <Header />
-          <Routes />
+          <BaseApp />
         </BrowserRouter>
       </SnackbarProvider>
     </Container>

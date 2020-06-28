@@ -210,7 +210,7 @@ const BetDetails = ({
           <Button
             onClick={handleBetClick('away')}
             disabled={!canBet || bet.betOn === '1' || bet.betOn === '2'}
-            className={`${bet.betOn === '2' ? 'bet-on' : ''} ${bet.betOn === '1' ? 'visibilty__hidden' : ''}`}
+            className={`${bet.betOn === '2' ? 'bet-on' : ''} ${bet.betOn === '1' ? 'visibility__hidden' : ''}`}
           >
             {bet.betOn === '2' ? `You bet on Away Team` : `Away Team Wins`}
           </Button>

@@ -246,6 +246,15 @@ const BetDetails = ({
               </>
             )}
           </Box>
+          <TextField
+            className="mt24"
+            id={`total-bets-${bet.address}`}
+            label="Total bets"
+            defaultValue={bet.totalBets?.length}
+            InputProps={{
+              readOnly: true,
+            }}
+          />
           {showResultForm && (
             <Box mt={4}>
               <form className="results-form">

@@ -79,6 +79,7 @@ const BetsPage = ({ account, getAccount, location, history }) => {
             gameBet['organiser'] = await footballGameBetInstance.methods.organiser().call(),
             gameBet['stake'] = await footballGameBetInstance.methods.stake().call(),
             gameBet['betOn'] = await  footballGameBetInstance.methods.bets(acc).call(),
+            gameBet['totalBets'] = await footballGameBetInstance.methods.getAllPlayers().call(),
             gameBet['balance'] = await web3.eth.getBalance(_address),
             gameBet['hasVoted'] = await gameBets.methods.hasVoted(gameBet.organiser, gameBet.address, acc).call(),
           );

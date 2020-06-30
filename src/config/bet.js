@@ -1,7 +1,7 @@
 import { Bet as BetConstants } from '../constants';
 
 export default {
-  GAME_DURATION: 3600,
+  GAME_DURATION: 120,
   RELOAD_BETS: 60000,
   PER_PAGE: 5,
   GameStatus: [

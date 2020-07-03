@@ -125,7 +125,7 @@ const OrganisersPage = () => {
                       <span className="ml8">{` (${row.numberOfTimesRated})`}</span>
                       <Rating
                         name={`rate-${row.organiser}}`}
-                        value={Number(row.totalRate)}
+                        value={Number(Math.round(row.totalRate/row.numberOfTimesRated))}
                         precision={1}
                         readOnly
                       />

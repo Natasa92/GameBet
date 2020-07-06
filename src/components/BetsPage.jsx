@@ -59,7 +59,16 @@ const BetsPage = ({ account, getAccount, location, history }) => {
 
     const finalResult = result.slice(startIndex, endIndex);
     setFilteredBets(finalResult);
-  }
+  };
+
+  const sortByDate = (betArray) => {
+    const sortedArray = betArray.sort((a, b) => {
+      const time1 = moment.unix(a.startTime).format('DD/MM/YYYY HH:mm');
+      const time2 = moment.unix(b.startTime).format('DD/MM/YYYY HH:mm');
+      return time1 - time2;
+    });
+    return sortedArray.reverse();
+  };
 
   const loadBets = async (acc) => {
     try {
@@ -88,8 +97,10 @@ const BetsPage = ({ account, getAccount, location, history }) => {
         })
       );
 
-      await setBets(_bets);
-      return _bets;
+      const _sortedBets = sortByDate(_bets);
+
+      await setBets(_sortedBets);
+      return _sortedBets;
     } catch (err) {
       throw new Error('Something went wrong while loading game bets.');
     }
